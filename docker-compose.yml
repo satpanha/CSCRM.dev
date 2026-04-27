@@ -1,36 +1,63 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crm-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crm-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   auth-service:
     build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
     container_name: crm-auth-service
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/crm?sslmode=disable
     ports:
       - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: ["node", "dist/main"]
     networks:
       - crm-net
 
   crm-core:
     build:
-      context: ./services/crm-core
-      dockerfile: Do`ckerfile
+      context: .
+      dockerfile: ./services/crm-core/Dockerfile
     container_name: crm-core-service
     environment:
       - NODE_ENV=production
       - PORT=3002
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/crm?sslmode=disable
     ports:
       - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: ["node", "dist/main"]
     networks:
       - crm-net
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: crm-frontend
     depends_on:
       - auth-service
@@ -39,6 +66,9 @@ services:
       - "5173:80"
     networks:
       - crm-net
+
+volumes:
+  postgres_data:
 
 networks:
   crm-net:
