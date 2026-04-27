@@ -1,0 +1,45 @@
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: crm-auth-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    command: ["node", "dist/main"]
+    networks:
+      - crm-net
+
+  crm-core:
+    build:
+      context: ./services/crm-core
+      dockerfile: Do`ckerfile
+    container_name: crm-core-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+    ports:
+      - "3002:3002"
+    command: ["node", "dist/main"]
+    networks:
+      - crm-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm-frontend
+    depends_on:
+      - auth-service
+      - crm-core
+    ports:
+      - "5173:80"
+    networks:
+      - crm-net
+
+networks:
+  crm-net:
+    driver: bridge

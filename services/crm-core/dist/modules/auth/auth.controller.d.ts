@@ -1,0 +1,14 @@
+import { AuthService } from './auth.service';
+export declare class AuthController {
+    private readonly authService;
+    constructor(authService: AuthService);
+    login(loginDto: any): Promise<{
+        message: string;
+    }>;
+    logout(): Promise<{
+        message: string;
+    }>;
+    getProfile(): Promise<{
+        message: string;
+    }>;
+}
